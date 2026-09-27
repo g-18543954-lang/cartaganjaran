@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SJKT Jalan Meru - Carta Ganjaran Pra Marutham</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts: Fredoka & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        brand: {
+                            gold: '#FFB800',
+                            goldLight: '#FFF4D2',
+                            teal: '#0D9488',
+                            tealLight: '#CCFBF1',
+                            purple: '#7C3AED',
+                            pink: '#EC4899',
+                            cream: '#FFFBEB'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8FAFC;
+        }
+
+        .heading-font {
+            font-family: 'Fredoka', cursive, sans-serif;
+        }
+
+        /* Custom Star Pop Animation */
+        @keyframes starPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.4) rotate(15deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .star-pop {
+            animation: starPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes badgeGlow {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(255, 184, 0, 0.6)); }
+            50% { transform: scale(1.15); filter: drop-shadow(0 0 10px rgba(255, 184, 0, 0.9)); }
+        }
+
+        .badge-glow {
+            animation: badgeGlow 2s infinite ease-in-out;
+        }
+
+        /* Print styling rules */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-full-width {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            .student-card {
+                break-inside: avoid;
+                border: 1px solid #cbd5e1 !important;
+                box-shadow: none !important;
+            }
+            .star-grid {
+                grid-template-columns: repeat(15, minmax(0, 1fr)) !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 bg-amber-50/30 pb-12">
+
+    <!-- Top Header / Banner -->
+    <header class="bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 text-white shadow-lg no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-4 text-center md:text-left">
+                    <div class="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-3xl shadow-inner border border-white/30 shrink-0">
+                        ⭐
+                    </div>
+                    <div>
+                        <span class="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm text-xs font-semibold rounded-full uppercase tracking-wider mb-1 border border-white/30">
+                            Pra Marutham
+                        </span>
+                        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold heading-font tracking-wide">
+                            SJKT JALAN MERU
+                        </h1>
+                        <p class="text-amber-100 text-sm sm:text-base font-medium">Carta Ganjaran Bintang Murid (Student Reward Chart)</p>
+                    </div>
+                </div>
+
+                <!-- Global Stats Badge -->
+                <div class="flex items-center gap-3 bg-white/10 backdrop-blur-md p-3 px-5 rounded-2xl border border-white/20 shadow-sm">
+                    <div class="text-center px-2">
+                        <div class="text-2xl font-black heading-font" id="totalClassStars">0</div>
+                        <div class="text-xs text-amber-100 uppercase tracking-wider font-semibold">Jumlah Bintang</div>
+                    </div>
+                    <div class="h-8 w-px bg-white/30"></div>
+                    <div class="text-center px-2">
+                        <div class="text-2xl font-black heading-font" id="completed30Count">0 / 25</div>
+                        <div class="text-xs text-amber-100 uppercase tracking-wider font-semibold">Capai 30★</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+
+        <!-- Action & Filter Controls Bar -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 mb-6 no-print">
+            <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+                
+                <!-- Left Group: Month Selector & Search -->
+                <div class="flex flex-col sm:flex-row items-center gap-3 flex-grow">
+                    <!-- Month Selector -->
+                    <div class="w-full sm:w-auto flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">
+                        <i class="fa-solid fa-calendar-days text-amber-600 text-lg"></i>
+                        <label for="monthSelect" class="text-xs font-bold text-amber-800 uppercase tracking-wide">Bulan:</label>
+                        <select id="monthSelect" onchange="changeMonth()" class="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer">
+                            <option value="1">Januari</option>
+                            <option value="2">Februari</option>
+                            <option value="3">Mac</option>
+                            <option value="4">April</option>
+                            <option value="5">Mei</option>
+                            <option value="6">Jun</option>
+                            <option value="7">Julai</option>
+                            <option value="8">Ogos</option>
+                            <option value="9">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Disember</option>
+                        </select>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="relative w-full sm:w-72">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="searchInput" oninput="filterStudents()" placeholder="Cari nama murid..." class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white text-sm transition">
+                        <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Group: Quick Tools & View Mode -->
+                <div class="flex flex-wrap items-center gap-2 justify-end">
+                    <!-- View mode toggle -->
+                    <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                        <button onclick="setViewMode('grid')" id="btnViewGrid" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 bg-white text-amber-600 shadow-sm">
+                            <i class="fa-solid fa-table-cells-large"></i> Grid
+                        </button>
+                        <button onclick="setViewMode('list')" id="btnViewList" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+                            <i class="fa-solid fa-list-check"></i> Senarai
+                        </button>
+                    </div>
+
+                    <!-- Sound Toggle -->
+                    <button id="soundToggleBtn" onclick="toggleSound()" title="Tukar Bunyi" class="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition border border-slate-200">
+                        <i id="soundIcon" class="fa-solid fa-volume-high text-amber-600"></i>
+                    </button>
+
+                    <!-- Reset Month Button -->
+                    <button onclick="promptResetMonth()" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl font-semibold text-xs transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-rotate-left"></i> Set Semula Bulan
+                    </button>
+
+                    <!-- Print Button -->
+                    <button onclick="triggerPrint()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-xs transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-print"></i> Cetak / Print
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Print Header (Visible only when printing) -->
+        <div class="hidden print:block text-center mb-6 border-b pb-4">
+            <h1 class="text-2xl font-bold uppercase tracking-wider text-black">SJKT JALAN MERU</h1>
+            <h2 class="text-xl font-semibold text-gray-800">CARTA GANJARAN BINTANG PRA MARUTHAM</h2>
+            <p class="text-sm text-gray-600 mt-1">Bulan: <span id="printMonthName" class="font-bold">Januari</span> | Top Student Reward Matrix (30 Bintang)</p>
+        </div>
+
+        <!-- Milestone Legend / Rewards info -->
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-2 px-1 no-print">
+            <div class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Pencapaian Lencana (Milestone Badges):
+            </div>
+            <div class="flex flex-wrap items-center gap-3 text-xs">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full font-semibold border border-amber-300">
+                    🥉 10 Bintang = Gangsa
+                </span>
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-200 text-slate-800 rounded-full font-semibold border border-slate-300">
+                    🥈 20 Bintang = Perak
+                </span>
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-yellow-300 text-yellow-900 rounded-full font-bold border border-yellow-400 shadow-sm">
+                    🏆 30 Bintang = Emas (Selesai!)
+                </span>
+            </div>
+        </div>
+
+        <!-- Students Container -->
+        <div id="studentsContainer" class="space-y-4">
+            <!-- Student cards/rows rendered dynamically by JS -->
+        </div>
+
+        <!-- Empty State Search Result -->
+        <div id="noResultsState" class="hidden bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center my-6">
+            <div class="text-4xl mb-2">🔍</div>
+            <h3 class="text-lg font-bold text-slate-700">Tiada Murid Ditemui</h3>
+            <p class="text-sm text-slate-500 mt-1">Cuba cari dengan ejaan atau nama yang lain.</p>
+            <button onclick="clearSearch()" class="mt-4 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition">
+                Set Semula Carian
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Reset Confirmation Modal -->
+    <div id="resetModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 no-print">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 transform transition-all">
+            <div class="w-12 h-12 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-600 text-2xl mb-4">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 heading-font mb-2">Sahkan Set Semula?</h3>
+            <p class="text-sm text-slate-600 leading-relaxed mb-6">
+                Adakah anda pasti mahu memadam semua bintang murid bagi bulan <span id="resetModalMonthName" class="font-bold text-rose-600">...</span>? Tindakan ini tidak boleh dibatalkan.
+            </p>
+            <div class="flex items-center justify-end gap-3">
+                <button onclick="closeResetModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold text-sm transition">
+                    Batal
+                </button>
+                <button onclick="confirmResetMonth()" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm shadow-md transition">
+                    Ya, Set Semula
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Initial Student Dataset (25 Preschool Students)
+        const INITIAL_STUDENTS = [
+            "ANBU MALNISHAA A/P ANBARASU",
+            "ANUSHA A/P MUNIKRISHNAN",
+            "ATHISHAN A/L PRITHIVIRAJ",
+            "CHARVINI SRI A/P CHADIESH KUMAR",
+            "DARNIKA A/P SASIKUMAR",
+            "DASWINA A/P MURUGAN",
+            "DEERGA DEEPSHIYA A/P SATIS",
+            "GAUWRIISH A/L NEELA KANDAN",
+            "HARAN RAVINDRAN",
+            "HELAKIYAN A/L JEGAN",
+            "HEMAVARATHINI A/P SURIA PRAKASH",
+            "KAAVIYASRI A/P SIVAGURU",
+            "KAVINAYAA NAIR A/P VIMELL",
+            "KIRTHIKASRI A/P VALLINATHAN",
+            "LAKSHMAN A/L PERATHIPPAN",
+            "SHANAMIKA ROOBAN",
+            "SHASVINRAJ A/L GUNA",
+            "SHIYAMLAN A/L MURUGAPUPATI",
+            "SIRTIKA SRE A/P SIVARAJU",
+            "THARSSHIKA A/P NITHIA KUMAR",
+            "THARUNESH A/L MURTHI",
+            "THEYSHA SHRI A/P RAJANDREN",
+            "TILOSAN A/L TAMIL KUMARAN",
+            "YAZHVENTHAR A/L DILIPJAYASUTHAN",
+            "YUGAL RAJ A/L RAJANDREN"
+        ];
+
+        const MONTH_NAMES = [
+            "Januari", "Februari", "Mac", "April", "Mei", "Jun", 
+            "Julai", "Ogos", "September", "Oktober", "November", "Disember"
+        ];
+
+        // State Management
+        let currentMonth = new Date().getMonth() + 1; // Default to current month
+        let viewMode = 'grid'; // 'grid' or 'list'
+        let soundEnabled = true;
+        let starData = {}; // Key: `m{month}_s{studentIndex}` -> integer (0-30)
+
+        // Web Audio Context for Sound Effects
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    audioCtx = new AudioContext();
+                }
+            }
+        }
+
+        // Play sound effect using Web Audio Synthesizer
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                if (!audioCtx) return;
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'add') {
+                    // Upward pleasant chime
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'remove') {
+                    // Downward short tone
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(200, now + 0.12);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'milestone') {
+                    // Arpeggio triumph chime
+                    const notes = [523.25, 659.25, 783.99, 1046.50]; // C E G C
+                    notes.forEach((freq, i) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+
+                        noteOsc.type = 'sine';
+                        noteOsc.frequency.value = freq;
+                        const start = now + (i * 0.08);
+                        noteGain.gain.setValueAtTime(0.25, start);
+                        noteGain.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
+                        noteOsc.start(start);
+                        noteOsc.stop(start + 0.3);
+                    });
+                }
+            } catch (e) {
+                console.warn('Audio playback not supported or blocked:', e);
+            }
+        }
+
+        // Initialize application on load
+        window.onload = function() {
+            // Set current month dropdown value
+            const monthSelect = document.getElementById('monthSelect');
+            monthSelect.value = currentMonth;
+
+            // Load saved data from localStorage
+            loadData();
+
+            // Render students
+            renderStudents();
+
+            // Setup global event listeners to resume audio context
+            document.body.addEventListener('click', () => {
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            }, { once: true });
+        };
+
+        // Load data from localStorage
+        function loadData() {
+            try {
+                const stored = localStorage.getItem('sjkt_pra_marutham_stars');
+                if (stored) {
+                    starData = JSON.parse(stored);
+                }
+            } catch (e) {
+                console.error('Failed to load local storage:', e);
+                starData = {};
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            try {
+                localStorage.setItem('sjkt_pra_marutham_stars', JSON.stringify(starData));
+            } catch (e) {
+                console.error('Failed to save to local storage:', e);
+            }
+        }
+
+        // Get star count for student in current month
+        function getStars(studentIndex) {
+            const key = `m${currentMonth}_s${studentIndex}`;
+            return starData[key] || 0;
+        }
+
+        // Set star count for student in current month
+        function setStars(studentIndex, count) {
+            const key = `m${currentMonth}_s${studentIndex}`;
+            starData[key] = Math.max(0, Math.min(30, count));
+            saveData();
+        }
+
+        // Change current active month
+        function changeMonth() {
+            currentMonth = parseInt(document.getElementById('monthSelect').value);
+            renderStudents();
+        }
+
+        // Switch View Modes (Grid vs List)
+        function setViewMode(mode) {
+            viewMode = mode;
+            const btnGrid = document.getElementById('btnViewGrid');
+            const btnList = document.getElementById('btnViewList');
+
+            if (mode === 'grid') {
+                btnGrid.className = "px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 bg-white text-amber-600 shadow-sm";
+                btnList.className = "px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900";
+            } else {
+                btnList.className = "px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 bg-white text-amber-600 shadow-sm";
+                btnGrid.className = "px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900";
+            }
+
+            renderStudents();
+        }
+
+        // Sound Toggle
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            const btn = document.getElementById('soundToggleBtn');
+
+            if (soundEnabled) {
+                icon.className = "fa-solid fa-volume-high text-amber-600";
+                btn.classList.remove('bg-rose-50');
+            } else {
+                icon.className = "fa-solid fa-volume-xmark text-slate-400";
+                btn.classList.add('bg-rose-50');
+            }
+        }
+
+        // Render all student cards / rows
+        function renderStudents() {
+            const container = document.getElementById('studentsContainer');
+            const searchVal = document.getElementById('searchInput').value.trim().toLowerCase();
+            
+            container.innerHTML = '';
+
+            let totalClassStars = 0;
+            let completed30Count = 0;
+            let visibleCount = 0;
+
+            INITIAL_STUDENTS.forEach((name, index) => {
+                const count = getStars(index);
+                totalClassStars += count;
+                if (count === 30) completed30Count++;
+
+                // Search Filter Logic
+                if (searchVal && !name.toLowerCase().includes(searchVal)) {
+                    return; // Skip rendering non-matching students
+                }
+
+                visibleCount++;
+
+                if (viewMode === 'grid') {
+                    container.appendChild(createStudentGridCard(name, index, count));
+                } else {
+                    container.appendChild(createStudentListRow(name, index, count));
+                }
+            });
+
+            // Update stats
+            document.getElementById('totalClassStars').innerText = totalClassStars;
+            document.getElementById('completed30Count').innerText = `${completed30Count} / 25`;
+
+            // Toggle Empty Search state
+            const noResultsState = document.getElementById('noResultsState');
+            if (visibleCount === 0) {
+                noResultsState.classList.remove('hidden');
+            } else {
+                noResultsState.classList.add('hidden');
+            }
+
+            // Sync print header month title
+            document.getElementById('printMonthName').innerText = MONTH_NAMES[currentMonth - 1];
+        }
+
+        // Create Badge Tag HTML according to star count
+        function getBadgeBadgeHTML(count) {
+            if (count === 30) {
+                return `<span class="badge-glow inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-yellow-400 text-yellow-950 border border-yellow-500 shadow-sm">
+                            🏆 Emas (30★)
+                        </span>`;
+            } else if (count >= 20) {
+                return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-200 text-slate-800 border border-slate-300">
+                            🥈 Perak (${count}★)
+                        </span>`;
+            } else if (count >= 10) {
+                return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                            🥉 Gangsa (${count}★)
+                        </span>`;
+            }
+            return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500">
+                        ${count} / 30
+                    </span>`;
+        }
+
+        // Create Full Card View Element (Grid View)
+        function createStudentGridCard(name, index, count) {
+            const card = document.createElement('div');
+            card.className = "student-card bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm hover:shadow-md transition relative overflow-hidden";
+
+            // Progress bar percentage
+            const pct = Math.round((count / 30) * 100);
+
+            // Generate 30 star elements
+            let starsHTML = '';
+            for (let i = 1; i <= 30; i++) {
+                const isEarned = i <= count;
+                const isLatest = i === count;
+                starsHTML += `
+                    <div class="flex items-center justify-center p-0.5">
+                        <i class="fa-star ${isEarned ? 'fa-solid text-amber-400 drop-shadow-sm scale-110' : 'fa-regular text-slate-300'} 
+                            ${isLatest ? 'star-pop text-amber-500' : ''} text-sm sm:text-base transition-all duration-200"></i>
+                    </div>
+                `;
+            }
+
+            card.innerHTML = `
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3 border-b border-slate-100 pb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 font-bold flex items-center justify-center text-sm shrink-0 font-fredoka">
+                            ${index + 1}
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base leading-tight">${name}</h3>
+                            <div class="flex items-center gap-2 mt-1">
+                                ${getBadgeBadgeHTML(count)}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add / Remove Star Controls -->
+                    <div class="flex items-center gap-2 shrink-0 self-end md:self-center no-print">
+                        <button onclick="modifyStars(${index}, -1)" ${count === 0 ? 'disabled' : ''} 
+                            class="w-9 h-9 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 flex items-center justify-center text-sm font-bold transition active:scale-95">
+                            <i class="fa-solid fa-minus"></i>
+                        </button>
+                        
+                        <div class="px-3 py-1 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 font-bold text-sm min-w-[4rem] text-center font-fredoka">
+                            ${count} / 30
+                        </div>
+
+                        <button onclick="modifyStars(${index}, 1)" ${count === 30 ? 'disabled' : ''} 
+                            class="w-9 h-9 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-sm font-bold shadow-sm transition active:scale-95">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Star Grid Layout (15 stars x 2 rows or flexible) -->
+                <div class="star-grid grid grid-cols-10 sm:grid-cols-15 gap-1 my-2 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                    ${starsHTML}
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden">
+                    <div class="bg-gradient-to-r from-amber-400 to-yellow-500 h-2 rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Create Compact List View Element
+        function createStudentListRow(name, index, count) {
+            const row = document.createElement('div');
+            row.className = "student-card bg-white rounded-xl p-3 border border-slate-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3";
+
+            // Compact 30 star indicators
+            let starsHTML = '';
+            for (let i = 1; i <= 30; i++) {
+                const isEarned = i <= count;
+                starsHTML += `<span class="${isEarned ? 'text-amber-400' : 'text-slate-200'} text-xs">★</span>`;
+            }
+
+            row.innerHTML = `
+                <div class="flex items-center gap-3 min-w-[280px]">
+                    <div class="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 font-bold flex items-center justify-center text-xs shrink-0 font-fredoka">
+                        ${index + 1}
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm">${name}</h3>
+                        <div class="mt-0.5">${getBadgeBadgeHTML(count)}</div>
+                    </div>
+                </div>
+
+                <!-- Inline Star Row -->
+                <div class="flex items-center gap-0.5 overflow-x-auto py-1 border-y md:border-none border-slate-100">
+                    ${starsHTML}
+                </div>
+
+                <!-- Controls -->
+                <div class="flex items-center gap-2 shrink-0 self-end md:self-center no-print">
+                    <button onclick="modifyStars(${index}, -1)" ${count === 0 ? 'disabled' : ''} 
+                        class="w-8 h-8 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 disabled:opacity-30 text-slate-700 flex items-center justify-center text-xs font-bold transition">
+                        <i class="fa-solid fa-minus"></i>
+                    </button>
+                    
+                    <span class="text-xs font-bold text-slate-700 w-12 text-center font-fredoka">${count} / 30</span>
+
+                    <button onclick="modifyStars(${index}, 1)" ${count === 30 ? 'disabled' : ''} 
+                        class="w-8 h-8 rounded-lg bg-amber-500 hover:bg-amber-600 text-white disabled:opacity-30 flex items-center justify-center text-xs font-bold transition">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+            `;
+
+            return row;
+        }
+
+        // Modify stars (+1 or -1)
+        function modifyStars(studentIndex, delta) {
+            const current = getStars(studentIndex);
+            const newCount = current + delta;
+
+            if (newCount < 0 || newCount > 30) return;
+
+            setStars(studentIndex, newCount);
+
+            // Play appropriate sound
+            if (delta > 0) {
+                if (newCount === 10 || newCount === 20 || newCount === 30) {
+                    playSound('milestone');
+                    triggerConfetti();
+                } else {
+                    playSound('add');
+                }
+            } else {
+                playSound('remove');
+            }
+
+            renderStudents();
+        }
+
+        // Trigger Confetti effect for milestone reach
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 80,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        // Search Filter
+        function filterStudents() {
+            const input = document.getElementById('searchInput');
+            const clearBtn = document.getElementById('clearSearchBtn');
+            if (input.value.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+            renderStudents();
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('searchInput');
+            input.value = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            renderStudents();
+        }
+
+        // Reset Month Actions
+        function promptResetMonth() {
+            const monthName = MONTH_NAMES[currentMonth - 1];
+            document.getElementById('resetModalMonthName').innerText = monthName;
+            document.getElementById('resetModal').classList.remove('hidden');
+        }
+
+        function closeResetModal() {
+            document.getElementById('resetModal').classList.add('hidden');
+        }
+
+        function confirmResetMonth() {
+            INITIAL_STUDENTS.forEach((_, index) => {
+                const key = `m${currentMonth}_s${index}`;
+                delete starData[key];
+            });
+            saveData();
+            closeResetModal();
+            renderStudents();
+        }
+
+        // Print Handler
+        function triggerPrint() {
+            window.print();
+        }
+    </script>
+</body>
+</html>
